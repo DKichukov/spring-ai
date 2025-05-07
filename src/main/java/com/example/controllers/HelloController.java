@@ -1,6 +1,9 @@
 package com.example.controllers;
 
+import com.example.constants.PromptConstants;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
@@ -9,8 +12,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -46,11 +49,28 @@ public class HelloController {
 //                """;
 
 //        PromptTemplate template = new PromptTemplate(message);
+//        PromptTemplate template = new PromptTemplate(PromptConstants.CELEB_PROMPT_TEMPLATE);
         PromptTemplate template = new PromptTemplate(celebPrompt);
 
         Prompt prompt = template.create(
                 Map.of("name", name)
         );
+
+        return Objects.requireNonNull(chatClient.prompt(prompt)
+                        .call()
+                        .chatResponse())
+                .getResult()
+                .getOutput()
+                .getText();
+    }
+
+    @GetMapping("/player")
+    public String getSportsDetails(@RequestParam @NotNull String name) {
+
+        UserMessage userMessage = new UserMessage(String.format(PromptConstants.PLAYER_USER_PROMPT_TEMPLATE, name));
+        SystemMessage systemMessage = new SystemMessage(PromptConstants.PLAYER_SYSTEM_PROMPT_TEMPLATE);
+
+        Prompt prompt = new Prompt(List.of(userMessage, systemMessage));
 
         return Objects.requireNonNull(chatClient.prompt(prompt)
                         .call()
