@@ -1,6 +1,7 @@
 package com.example.controllers;
 
 import com.example.constants.PromptConstants;
+import com.example.models.Achievement;
 import com.example.models.Player;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
@@ -9,6 +10,7 @@ import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,14 +22,14 @@ import java.util.Map;
 import java.util.Objects;
 
 @RestController
-public class HelloController {
+public class MainController {
 
     private final ChatClient chatClient;
 
     @Value("classpath:prompts/celeb-details.st")
     private Resource celebPrompt;
 
-    public HelloController(ChatClient.Builder builder) {
+    public MainController(ChatClient.Builder builder) {
         this.chatClient = builder.build();
     }
 
@@ -76,7 +78,7 @@ public class HelloController {
 
         Prompt prompt = new Prompt(List.of(userMessage, systemMessage));
 
-        String responseText  = Objects.requireNonNull(chatClient.prompt(prompt)
+        String responseText = Objects.requireNonNull(chatClient.prompt(prompt)
                         .call()
                         .chatResponse())
                 .getResult()
@@ -85,5 +87,17 @@ public class HelloController {
 
         assert responseText != null;
         return converter.convert(responseText);
+    }
+
+    @GetMapping("/achievements/player")
+    public List<Achievement> getPlayerAchievements(@RequestParam @NotNull String name) {
+
+        var message = PromptConstants.PLAYER_ACHIEVEMENT;
+
+        PromptTemplate template = new PromptTemplate(message);
+
+        Prompt prompt = template.create(Map.of("player", name));
+        return chatClient.prompt(prompt).call().entity(new ParameterizedTypeReference<List<Achievement>>() {
+        });
     }
 }

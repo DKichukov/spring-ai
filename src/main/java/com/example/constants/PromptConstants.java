@@ -33,6 +33,10 @@ public final class PromptConstants {
         }
         """;
 
+    public static final String PLAYER_ACHIEVEMENT = """
+    Provide a list of achievements for {player}.
+    """;
+
     private PromptConstants() {
     }
 
