@@ -1,11 +1,13 @@
 package com.example.controllers;
 
 import com.example.constants.PromptConstants;
+import com.example.models.Player;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.messages.SystemMessage;
 import org.springframework.ai.chat.messages.UserMessage;
 import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.ai.converter.BeanOutputConverter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -65,18 +67,23 @@ public class HelloController {
     }
 
     @GetMapping("/player")
-    public String getSportsDetails(@RequestParam @NotNull String name) {
+    public Player getSportsDetails(@RequestParam @NotNull String name) {
+
+        BeanOutputConverter<Player> converter = new BeanOutputConverter<>(Player.class);
 
         UserMessage userMessage = new UserMessage(String.format(PromptConstants.PLAYER_USER_PROMPT_TEMPLATE, name));
-        SystemMessage systemMessage = new SystemMessage(PromptConstants.PLAYER_SYSTEM_PROMPT_TEMPLATE);
+        SystemMessage systemMessage = new SystemMessage(PromptConstants.PLAYER_SYSTEM_PROMPT);
 
         Prompt prompt = new Prompt(List.of(userMessage, systemMessage));
 
-        return Objects.requireNonNull(chatClient.prompt(prompt)
+        String responseText  = Objects.requireNonNull(chatClient.prompt(prompt)
                         .call()
                         .chatResponse())
                 .getResult()
                 .getOutput()
                 .getText();
+
+        assert responseText != null;
+        return converter.convert(responseText);
     }
 }
