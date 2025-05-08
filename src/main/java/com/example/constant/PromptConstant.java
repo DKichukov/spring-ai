@@ -1,6 +1,6 @@
-package com.example.constants;
+package com.example.constant;
 
-public final class PromptConstants {
+public final class PromptConstant {
     // Sports System Prompt Template
     public static final String PLAYER_USER_PROMPT_TEMPLATE = """
         Provide details for %s including:
@@ -37,7 +37,7 @@ public final class PromptConstants {
     Provide a list of achievements for {player}.
     """;
 
-    private PromptConstants() {
+    private PromptConstant() {
     }
 
 }
