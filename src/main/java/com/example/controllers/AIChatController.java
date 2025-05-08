@@ -22,14 +22,14 @@ import java.util.Map;
 import java.util.Objects;
 
 @RestController
-public class MainController {
+public class AIChatController {
 
     private final ChatClient chatClient;
 
     @Value("classpath:prompts/celeb-details.st")
     private Resource celebPrompt;
 
-    public MainController(ChatClient.Builder builder) {
+    public AIChatController(ChatClient.Builder builder) {
         this.chatClient = builder.build();
     }
 
