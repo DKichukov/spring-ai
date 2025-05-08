@@ -41,6 +41,7 @@ public class AIChatController {
     private Resource celebPrompt;
 
     public AIChatController(ChatClient.Builder builder) {
+
         this.chatClient = builder.build();
     }
 
@@ -62,6 +63,7 @@ public class AIChatController {
     })
     @GetMapping
     public String prompt(@RequestParam @NotNull String message) {
+
         return Objects.requireNonNull(chatClient.prompt(message)
                         .call()
                         .chatResponse())
@@ -82,17 +84,17 @@ public class AIChatController {
                             mediaType = "text/plain",
                             examples = @ExampleObject(
                                     value = """
-                    Name: Albert Einstein
-                    Born: March 14, 1879
-                    Died: April 18, 1955
-                    Occupation: Theoretical Physicist
-                    
-                    Career Achievements:
-                    - Developed the theory of relativity
-                    - Won the Nobel Prize in Physics in 1921
-                    - Published more than 300 scientific papers
-                    - E=mc² equation revolutionized physics
-                    """
+                                            Name: Albert Einstein
+                                            Born: March 14, 1879
+                                            Died: April 18, 1955
+                                            Occupation: Theoretical Physicist
+                                            
+                                            Career Achievements:
+                                            - Developed the theory of relativity
+                                            - Won the Nobel Prize in Physics in 1921
+                                            - Published more than 300 scientific papers
+                                            - E=mc² equation revolutionized physics
+                                            """
                             )
                     )
             )
@@ -135,16 +137,16 @@ public class AIChatController {
                             schema = @Schema(implementation = Player.class),
                             examples = @ExampleObject(
                                     value = """
-                    {
-                      "name": "Lionel Messi",
-                      "sport": "Football (Soccer)",
-                      "nationality": "Argentina",
-                      "birthDate": "1987-06-24",
-                      "teams": ["FC Barcelona", "Paris Saint-Germain", "Inter Miami CF"],
-                      "position": "Forward",
-                      "careerSummary": "One of the greatest footballers of all time..."
-                    }
-                    """
+                                            {
+                                              "name": "Lionel Messi",
+                                              "sport": "Football (Soccer)",
+                                              "nationality": "Argentina",
+                                              "birthDate": "1987-06-24",
+                                              "teams": ["FC Barcelona", "Paris Saint-Germain", "Inter Miami CF"],
+                                              "position": "Forward",
+                                              "careerSummary": "One of the greatest footballers of all time..."
+                                            }
+                                            """
                             )
                     )
             )
@@ -183,19 +185,19 @@ public class AIChatController {
                             array = @ArraySchema(schema = @Schema(implementation = Achievement.class)),
                             examples = @ExampleObject(
                                     value = """
-                    [
-                      {
-                        "title": "FIFA World Cup Winner",
-                        "year": 2022,
-                        "description": "Led Argentina to victory in Qatar"
-                      },
-                      {
-                        "title": "Ballon d'Or",
-                        "year": 2021,
-                        "description": "7th time winning the prestigious award"
-                      }
-                    ]
-                    """
+                                            [
+                                              {
+                                                "title": "FIFA World Cup Winner",
+                                                "year": 2022,
+                                                "description": "Led Argentina to victory in Qatar"
+                                              },
+                                              {
+                                                "title": "Ballon d'Or",
+                                                "year": 2021,
+                                                "description": "7th time winning the prestigious award"
+                                              }
+                                            ]
+                                            """
                             )
                     )
             )

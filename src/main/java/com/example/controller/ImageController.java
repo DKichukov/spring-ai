@@ -17,7 +17,12 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.MediaType;
 import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.validation.constraints.NotNull;
@@ -31,7 +36,9 @@ public class ImageController {
     private final ChatModel chatModel;
     private final ImageModel imageModel;
 
-    public ImageController(ChatModel chatModel, ImageModel imageModel) {
+    public ImageController(ChatModel chatModel,
+                           ImageModel imageModel) {
+
         this.chatModel = chatModel;
         this.imageModel = imageModel;
     }
@@ -54,7 +61,7 @@ public class ImageController {
     })
     @GetMapping("image-to-text")
     public String describeImage() {
-        // Load the image from resources, used for testing
+        // Load the image from resources/images, used for testing this approach
         String imageName = "plane.png";
         return ChatClient.create(chatModel)
                 .prompt()
@@ -93,6 +100,7 @@ public class ImageController {
     })
     @PostMapping(value = "/describe-image", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public String describeUploadedImage(@RequestParam("file") MultipartFile file) {
+
         try {
             String contentType = file.getContentType();
             if (contentType == null || (!contentType.equals(MediaType.IMAGE_PNG_VALUE) &&
@@ -103,6 +111,7 @@ public class ImageController {
             ByteArrayResource fileResource = new ByteArrayResource(file.getBytes()) {
                 @Override
                 public String getFilename() {
+
                     return file.getOriginalFilename();
                 }
             };
