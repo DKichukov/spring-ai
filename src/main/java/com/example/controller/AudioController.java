@@ -8,14 +8,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.constraints.NotBlank;
 import org.springframework.ai.audio.transcription.AudioTranscriptionPrompt;
+import org.springframework.ai.openai.OpenAiAudioSpeechModel;
+import org.springframework.ai.openai.OpenAiAudioSpeechOptions;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionModel;
 import org.springframework.ai.openai.OpenAiAudioTranscriptionOptions;
 import org.springframework.ai.openai.api.OpenAiAudioApi;
+import org.springframework.ai.openai.audio.speech.SpeechPrompt;
+import org.springframework.ai.openai.audio.speech.SpeechResponse;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,10 +40,38 @@ import java.io.IOException;
 public class AudioController {
 
     private final OpenAiAudioTranscriptionModel openAiAudioTranscriptionModel;
+    private final OpenAiAudioSpeechModel openAiAudioSpeechModel;
 
-    public AudioController(OpenAiAudioTranscriptionModel openAiAudioTranscriptionModel) {
+    public AudioController(OpenAiAudioTranscriptionModel openAiAudioTranscriptionModel,
+                           OpenAiAudioSpeechModel openAiAudioSpeechModel) {
 
         this.openAiAudioTranscriptionModel = openAiAudioTranscriptionModel;
+        this.openAiAudioSpeechModel = openAiAudioSpeechModel;
+    }
+
+    private static boolean isIsValidAudioFile(MultipartFile file) {
+
+        String originalFilename = file.getOriginalFilename();
+        String contentType = file.getContentType();
+
+        boolean isValidAudioFile = false;
+
+        if (originalFilename != null) {
+            String extension = originalFilename.toLowerCase();
+            if (extension.endsWith(".mp3") || extension.endsWith(".mp4")) {
+                isValidAudioFile = true;
+            }
+        }
+
+        if (contentType != null) {
+            if (contentType.equals("audio/mpeg") ||
+                    contentType.equals("audio/mp3") ||
+                    contentType.equals("audio/mp4") ||
+                    contentType.equals("video/mp4")) {
+                isValidAudioFile = true;
+            }
+        }
+        return isValidAudioFile;
     }
 
     @Operation(
@@ -75,7 +113,7 @@ public class AudioController {
     public String audioTranscription() {
         // Load the audio from resources/audios, used for testing this approach
         String songTitle = "song-1.mp3";
-
+        //https://platform.openai.com/docs/api-reference/audio/createTranscription
         OpenAiAudioTranscriptionOptions options
                 = OpenAiAudioTranscriptionOptions
                 .builder()
@@ -211,28 +249,63 @@ public class AudioController {
         }
     }
 
-    private static boolean isIsValidAudioFile(MultipartFile file) {
-
-        String originalFilename = file.getOriginalFilename();
-        String contentType = file.getContentType();
-
-        boolean isValidAudioFile = false;
-
-        if (originalFilename != null) {
-            String extension = originalFilename.toLowerCase();
-            if (extension.endsWith(".mp3") || extension.endsWith(".mp4")) {
-                isValidAudioFile = true;
+    @Operation(
+            summary = "Convert text to speech",
+            description = "Generates an MP3 audio file from the given text prompt",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Audio file generated successfully",
+                            content = @Content(
+                                    mediaType = "audio/mpeg",
+                                    schema = @Schema(type = "string", format = "binary")
+                            )
+                    ),
+                    @ApiResponse(
+                            responseCode = "400",
+                            description = "Invalid input parameters"
+                    ),
+                    @ApiResponse(
+                            responseCode = "500",
+                            description = "Error generating audio"
+                    )
             }
-        }
+    )
+    @GetMapping("/text-to-audio/{prompt}")
+    public ResponseEntity<Resource> generateAudio(
+            @Parameter(description = "Text to convert to speech", required = true, example = "Hello world")
+            @NotBlank @PathVariable String prompt) {
 
-        if (contentType != null) {
-            if (contentType.equals("audio/mpeg") ||
-                    contentType.equals("audio/mp3") ||
-                    contentType.equals("audio/mp4") ||
-                    contentType.equals("video/mp4")) {
-                isValidAudioFile = true;
-            }
+        try {
+            OpenAiAudioSpeechOptions options = OpenAiAudioSpeechOptions.builder()
+                    .model(OpenAiAudioApi.TtsModel.TTS_1.getValue())
+                    .responseFormat(OpenAiAudioApi.SpeechRequest.AudioResponseFormat.MP3)
+                    .voice(OpenAiAudioApi.SpeechRequest.Voice.NOVA)
+                    .speed(0.8f)
+                    .build();
+
+            SpeechPrompt speechPrompt = new SpeechPrompt(prompt, options);
+            SpeechResponse response = openAiAudioSpeechModel.call(speechPrompt);
+
+            byte[] audioBytes = response.getResult().getOutput();
+            ByteArrayResource resource = new ByteArrayResource(audioBytes);
+
+            // Generate filename based on prompt (first 20 chars, sanitized)
+            String filename = prompt.substring(0, Math.min(prompt.length(), 20))
+                    .replaceAll("[^a-zA-Z0-9]", "_") + ".mp3";
+
+            return ResponseEntity.ok()
+                    .contentType(MediaType.parseMediaType("audio/mpeg"))
+                    .contentLength(resource.contentLength())
+                    .header(HttpHeaders.CONTENT_DISPOSITION,
+                            ContentDisposition.attachment()
+                                    .filename(filename)
+                                    .build().toString())
+                    .body(resource);
+
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
         }
-        return isValidAudioFile;
     }
 }
+
